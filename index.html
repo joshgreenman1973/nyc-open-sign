@@ -72,7 +72,16 @@ button.b[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:va
 .daypick button.b{padding:8px 0;width:52px;text-align:center;margin-left:-1px}
 .daypick button.b:first-child{margin-left:0}
 @media (max-width:600px){.daypick{display:grid;grid-template-columns:repeat(7,1fr)}.daypick button.b{width:auto}}
-.todwrap{padding-top:4px}
+.todwrap{padding-top:4px;position:relative}
+.todmark{position:absolute;top:calc(100% + 8px);left:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 10px 6px;background:rgba(8,9,10,.9);border:1px solid var(--line2);border-top:0;pointer-events:none;white-space:nowrap}
+.todmark svg{display:block}
+.todmark .face{fill:var(--night);stroke:var(--fg2);stroke-width:1.1}
+.todmark .tk{stroke:var(--fg);stroke-width:1.4}
+.todmark .tk2{stroke:var(--fg2);stroke-width:.8}
+.todmark .hh{stroke:var(--fg);stroke-width:2.4}
+.todmark .mh{stroke:var(--fg);stroke-width:1.4}
+.todmark .pin{fill:var(--accent)}
+.todmark .tm{font-size:var(--t-small);font-weight:600;font-variant-numeric:tabular-nums}
 #tod{-webkit-appearance:none;appearance:none;display:block;width:100%;height:30px;margin:0;background:transparent;cursor:pointer}
 #tod:focus{outline:none}
 #tod:focus-visible{outline:1px solid var(--fg2);outline-offset:3px}
@@ -128,6 +137,10 @@ footer{font-size:var(--t-micro);color:var(--fg2);padding:18px 0 40px;border-top:
         <div class="todwrap">
           <input type="range" id="tod" min="0" max="1435" step="5" value="0" aria-label="Time of day">
           <div class="todticks" aria-hidden="true"><span>Midnight</span><span>6 a.m.</span><span>Noon</span><span>6 p.m.</span><span>Midnight</span></div>
+          <div class="todmark" id="todmark" aria-hidden="true">
+            <svg viewBox="-18 -18 36 36" width="40" height="40"><circle r="16.5" class="face"/><line x1="0" y1="-15.5" x2="0" y2="-12.5" transform="rotate(0)" class="tk"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(30)" class="tk2"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(60)" class="tk2"/><line x1="0" y1="-15.5" x2="0" y2="-12.5" transform="rotate(90)" class="tk"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(120)" class="tk2"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(150)" class="tk2"/><line x1="0" y1="-15.5" x2="0" y2="-12.5" transform="rotate(180)" class="tk"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(210)" class="tk2"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(240)" class="tk2"/><line x1="0" y1="-15.5" x2="0" y2="-12.5" transform="rotate(270)" class="tk"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(300)" class="tk2"/><line x1="0" y1="-15.5" x2="0" y2="-13.8" transform="rotate(330)" class="tk2"/><line id="hh" x1="0" y1="2.5" x2="0" y2="-8.5" class="hh"/><line id="mh" x1="0" y1="3" x2="0" y2="-13" class="mh"/><circle r="1.7" class="pin"/></svg>
+            <div class="tm" id="todtime">&nbsp;</div>
+          </div>
         </div>
       </div>
     </div>
@@ -349,7 +362,7 @@ function buildMap(){
       }),
       new deck.ScatterplotLayer({
         id:'core', data, getPosition: pos, radiusUnits:'meters', getRadius: 7,
-        radiusMinPixels: 1.15, radiusMaxPixels: 5, stroked:false, pickable:true,
+        radiusMinPixels: 1.15, radiusMaxPixels: 5, stroked:false, pickable:false,
         getFillColor: (_, {index, target}) => {
           const k = kind[index], c = ink[k];
           if (hidden.has(k)) { target[3]=0; return target; }
@@ -361,13 +374,21 @@ function buildMap(){
         },
         updateTriggers: { getFillColor: [t, hidden.size, [...hidden].join()] },
         parameters: additive
+      }),
+      // Hover targets: only places open at the chosen time, so a closed
+      // ember never answers the mouse. Closed and hidden places get radius 0.
+      new deck.ScatterplotLayer({
+        id:'pick', data, getPosition: pos, radiusUnits:'pixels', radiusMinPixels: 0,
+        getRadius: (_, {index}) => (!hidden.has(kind[index]) && bright[sched[index]] > 0) ? 6 : 0,
+        getFillColor: [0, 0, 0, 1], stroked:false, pickable:true,
+        updateTriggers: { getRadius: [t, hidden.size, [...hidden].join()] }
       })
     ];
   }
 
   deckOverlay = new deck.MapboxOverlay({
     interleaved: false, pickingRadius: 6, layers: [],
-    getTooltip: ({index, layer}) => layer && index >= 0 ? { html: tipFor(index), className:'deck-tooltip', style:{background:'none',padding:0,border:0} } : null
+    getTooltip: ({index, layer}) => layer && index >= 0 && !hidden.has(kind[index]) && bright[sched[index]] > 0 ? { html: tipFor(index), className:'deck-tooltip', style:{background:'none',padding:0,border:0} } : null
   });
   map.addControl(deckOverlay);
   const zoomFactor = () => { const z = map.getZoom(); return z < 11 ? 0.28 + 0.27*(z-9)/2 : z < 14 ? 0.55 + 0.55*(z-11)/3 : 1.1; };
@@ -485,6 +506,21 @@ function updateCount(){
 const tod = document.getElementById('tod');
 const dayBtns = [...document.querySelectorAll('.daypick button')];
 let todDragging = false;
+const todmark = document.getElementById('todmark'), hh = document.getElementById('hh'), mh = document.getElementById('mh'), todtime = document.getElementById('todtime');
+// The little clock rides under the slider's thumb and shows the exact time.
+function placeMark(){
+  const m = t % 1440;
+  todtime.textContent = clockWords(m);           // fill the text first so the width below is right
+  const w = tod.clientWidth, half = todmark.offsetWidth / 2 || 30;
+  const x = 7 + (w - 14) * Math.min(m, 1435) / 1435;
+  // keep the tab inside the dock, so it never pokes past the screen edge on a phone
+  const wr = tod.parentElement.getBoundingClientRect(), dr = tod.closest('.dock').getBoundingClientRect();
+  const lo = half - (wr.left - dr.left) + 4, hi = w + (dr.right - wr.right) - half - 4;
+  todmark.style.left = Math.max(lo, Math.min(hi, x)) + 'px';
+  hh.setAttribute('transform', 'rotate(' + (((Math.floor(m/60)) % 12) * 30 + (m % 60) * 0.5) + ')');
+  mh.setAttribute('transform', 'rotate(' + (m % 60) * 6 + ')');
+}
+window.addEventListener('resize', () => { if (D) placeMark(); });
 dayBtns.forEach((b, i) => b.addEventListener('click', () => { stop(); setTime(i*1440 + (t % 1440)); }));
 tod.addEventListener('pointerdown', () => { todDragging = true; });
 window.addEventListener('pointerup', () => { todDragging = false; });
@@ -501,6 +537,7 @@ function setTime(m, writeHash = true){
   const di = Math.floor(t / 1440);
   dayBtns.forEach((b, i) => b.setAttribute('aria-pressed', i === di ? 'true' : 'false'));
   if (!todDragging) tod.value = String(t % 1440 - (t % 1440) % 5);
+  placeMark();
   tod.setAttribute('aria-valuetext', clockWords(t));
   updateCount(); paintWeek(); redraw();
   if (writeHash){ clearTimeout(hashTimer); hashTimer = setTimeout(() => history.replaceState(null, '', '#' + dayOf(t).slice(0,3).toLowerCase() + '-' + String(Math.floor(t%1440/60)).padStart(2,'0') + String(t%60).padStart(2,'0')), 250); }
