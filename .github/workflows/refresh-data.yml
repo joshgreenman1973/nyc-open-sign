@@ -1,0 +1,46 @@
+name: Weekly data refresh
+
+# OpenStreetMap edits trickle in continuously but a shop inventory moves slowly,
+# and Overpass is volunteer-run — weekly is enough to stay current without
+# leaning on someone else's free infrastructure every morning.
+on:
+  schedule:
+    - cron: '10 11 * * 1'   # Mondays, 7:10 AM ET, half an hour after the bagel map
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    # The Overpass retry loop can run for half an hour when every mirror is
+    # busy; this caps it well short of the six-hour runner default.
+    timeout-minutes: 75
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Rebuild from Overpass
+        run: python3 build.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          if git diff --staged --quiet; then
+            echo "No data changes -- skipping commit"
+          else
+            git commit -m "Weekly data refresh: $(date -u +%Y-%m-%d)"
+            pushed=false
+            for attempt in 1 2 3 4 5; do
+              if git push origin main; then pushed=true; break; fi
+              echo "Push rejected (attempt $attempt) — rebasing on latest main…"
+              git pull --rebase --autostash origin main
+            done
+            $pushed || { echo "Push failed after retries"; exit 1; }
+          fi

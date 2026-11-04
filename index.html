@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Sign</title>
+<meta name="description" content="Every New York City business that posts its hours on OpenStreetMap, lit when it's open, for any hour of the week.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+/* House system v5, black. Tokens copied from experiments/house-style/house.css. */
+:root{
+  --bg:#111311; --bg2:#1b1e1b; --fg:#f2f3ef; --fg2:#a2a8a1;
+  --line:#3a3f3a; --line2:#262a26;
+  --cobalt:#5b86ff; --vermilion:#ff6a45; --sun:#ffd23f; --mint:#3fd68f;
+  --rose:#ff6fae; --cyan:#3cc8d8; --orange:#ff9f2e; --lilac:#b79bff;
+  --accent:var(--sun);
+  --night:#08090a;
+  --sans:'Karla',system-ui,-apple-system,sans-serif;
+  --display:'Archivo',system-ui,sans-serif;
+  --t-micro:13px; --t-small:14px; --t-body:17px;
+  --t-find:clamp(1.2rem,1.9vw,1.55rem);
+  --t-h1:clamp(1.9rem,3.2vw,2.6rem);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:var(--t-body);line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--fg);text-decoration-color:var(--fg2);text-underline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+@media (max-width:600px){.wrap{padding:0 16px}}
+
+header{padding:22px 0 26px}
+.topline{display:flex;justify-content:space-between;gap:16px;font-size:var(--t-micro);color:var(--fg2);padding-bottom:28px;border-bottom:1px solid var(--line2);margin-bottom:26px}
+h1{font-family:var(--display);font-variation-settings:'wdth' 88;font-weight:700;font-size:var(--t-h1);line-height:1.05;margin:0 0 14px;letter-spacing:-.01em}
+.finding{font-size:var(--t-find);line-height:1.35;margin:0 0 14px;max-width:44ch}
+.lede{color:var(--fg2);max-width:68ch;margin:0}
+.lede strong{color:var(--fg);font-weight:600}
+
+/* the map is the page */
+.stage{position:relative;height:min(80vh,860px);min-height:460px;background:var(--night);border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+#map{position:absolute;inset:0}
+.clock{position:absolute;left:24px;bottom:22px;pointer-events:none;text-shadow:0 0 18px var(--night)}
+.clock .t{font-family:var(--display);font-variation-settings:'wdth' 75;font-weight:600;font-size:clamp(2.4rem,6vw,4.6rem);line-height:.95;font-variant-numeric:tabular-nums}
+.clock .d{font-size:1.15rem;margin-top:6px}
+.clock .c{font-size:var(--t-small);color:var(--fg2);margin-top:2px}
+@media (max-width:600px){.clock{left:16px;bottom:34px}.stage{height:70vh}.days .l{display:none}}
+.days .s{display:none}@media (max-width:600px){.days .s{display:inline}}
+.maplibregl-ctrl-top-right,.maplibregl-ctrl-bottom-right{z-index:3}
+.maplibregl-ctrl-attrib{background:rgba(8,9,10,.7)!important;font-family:var(--sans)}
+.maplibregl-ctrl-attrib a{color:var(--fg2)!important}
+.maplibregl-ctrl-group{background:var(--bg2)!important;border-radius:0!important;box-shadow:none!important;border:1px solid var(--line)}
+.maplibregl-ctrl-group button{filter:invert(1) brightness(.8)}
+.maplibregl-ctrl-group button+button{border-top:1px solid var(--line)!important}
+
+/* time controls */
+.controls{padding-top:18px;padding-bottom:10px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+button.b{font:inherit;font-size:var(--t-small);color:var(--fg);background:var(--bg2);border:1px solid var(--line);padding:7px 14px;cursor:pointer}
+button.b:hover{border-color:var(--fg2)}
+button.b[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.bar .hint{font-size:var(--t-small);color:var(--fg2);margin-left:auto}
+.weekwrap{position:relative}
+#week{display:block;width:100%;height:150px;cursor:ew-resize;touch-action:none;outline:none}
+#week:focus-visible{outline:1px solid var(--fg2);outline-offset:4px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);font-size:var(--t-micro);color:var(--fg2);margin-top:6px}
+.days span{padding-left:4px;border-left:1px solid var(--line)}
+.days b{font-weight:400}
+
+.key{list-style:none;margin:22px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 22px}
+.key button{all:unset;cursor:pointer;display:grid;grid-template-columns:14px 1fr auto;align-items:baseline;gap:10px;width:100%;padding:6px 0;border-bottom:1px solid var(--line2);font-size:var(--t-small)}
+.key .sw{width:12px;height:12px;align-self:center}
+.key .n{color:var(--fg2);font-variant-numeric:tabular-nums}
+.key button[aria-pressed=false]{opacity:.38}
+.key button:focus-visible{outline:1px solid var(--fg2)}
+
+.notes{padding-top:40px;padding-bottom:70px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 56px}
+@media (max-width:800px){.notes{grid-template-columns:1fr}}
+.notes h2{font-family:var(--display);font-variation-settings:'wdth' 88;font-weight:650;font-size:1.25rem;margin:0 0 8px}
+.notes p{color:var(--fg2);margin:0 0 12px;font-size:16px}
+.notes p strong{color:var(--fg);font-weight:600}
+footer{font-size:var(--t-micro);color:var(--fg2);padding:18px 0 40px;border-top:1px solid var(--line2)}
+
+/* hover card */
+.deck-tooltip{font-family:var(--sans)!important}
+.tip{background:var(--bg2);border:1px solid var(--line);padding:9px 12px;max-width:260px;color:var(--fg);font-size:var(--t-small);line-height:1.4}
+.tip .nm{font-weight:600;font-size:15px}
+.tip .k{color:var(--fg2)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg2);font-size:var(--t-small)}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="topline"><span>Hours as posted on OpenStreetMap</span><span id="asof">&nbsp;</span></div>
+  <h1>Open Sign</h1>
+  <p class="finding" id="finding">&nbsp;</p>
+  <p class="lede" id="lede">&nbsp;</p>
+</header>
+
+<section class="stage" aria-label="Map of open businesses">
+  <div id="map"></div>
+  <div class="loading" id="loading">Turning the lights on</div>
+  <div class="clock" aria-live="polite">
+    <div class="t" id="clockTime">&nbsp;</div>
+    <div class="d" id="clockDay">&nbsp;</div>
+    <div class="c" id="clockCount">&nbsp;</div>
+  </div>
+</section>
+
+<section class="wrap controls">
+  <div class="bar">
+    <button class="b" id="play" aria-pressed="false">Play the week</button>
+    <button class="b" id="now">Right now</button>
+    <span class="hint" id="hint">Drag across the week to move the clock</span>
+  </div>
+  <div class="weekwrap">
+    <canvas id="week" tabindex="0" role="slider" aria-label="Time of week" aria-valuemin="0" aria-valuemax="10079"></canvas>
+    <div class="days"><span><b class="l">Monday</b><b class="s">Mon</b></span><span><b class="l">Tuesday</b><b class="s">Tue</b></span><span><b class="l">Wednesday</b><b class="s">Wed</b></span><span><b class="l">Thursday</b><b class="s">Thu</b></span><span><b class="l">Friday</b><b class="s">Fri</b></span><span><b class="l">Saturday</b><b class="s">Sat</b></span><span><b class="l">Sunday</b><b class="s">Sun</b></span></div>
+  </div>
+  <ul class="key" id="key"></ul>
+</section>
+
+<section class="wrap notes">
+  <div>
+    <h2>What's on the map</h2>
+    <p id="what">&nbsp;</p>
+    <p>The colors follow the light each kind of place gives off: fluorescent blue-white for delis, groceries and pharmacies, warm orange for restaurants and cafes, pink neon for bars and clubs, yellow for shops and violet for offices, banks, clinics, gyms and galleries. A place glows while it's open and fades to a faint ember when it closes. Where many places sit close together, their light adds up.</p>
+  </div>
+  <div>
+    <h2>How the hours are read</h2>
+    <p id="how">&nbsp;</p>
+    <p>The clock is always New York time, wherever you're reading from. Holiday closings are ignored, so this shows an ordinary week. Rules that apply only in some months, like summer hours, are applied for the month the data was pulled. Where a listing says a place is open late with no closing time ("17:00+"), it's counted as open for three hours. Where a listing gives two schedules, such as a store and the pharmacy inside it, the first one is used.</p>
+    <h2>How complete it is</h2>
+    <p>Not very, and not evenly. As a rough check, the restaurants and cafes here were counted by borough in November 2026 and set against the restaurants the health department <a href="https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j">inspected</a> in the two years before. The map had about <strong>42%</strong> as many in Brooklyn, <strong>37%</strong> in Manhattan, <strong>26%</strong> in Queens, <strong>25%</strong> on Staten Island and <strong>8%</strong> in the Bronx. A dark block can mean a closed block or an unmapped one. The rhythm of the day, when things open and when they close, is the part to trust.</p>
+    <p>The data is pulled fresh from OpenStreetMap every Monday. To fix a wrong listing, edit it at <a href="https://www.openstreetmap.org">openstreetmap.org</a>; the change shows up here the next week.</p>
+  </div>
+</section>
+
+<footer class="wrap">Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, available under the Open Database License. Basemap © <a href="https://carto.com/attributions">CARTO</a>. By Josh Greenman.</footer>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/deck.gl@9.1.14/dist.min.js"></script>
+<script>
+(function(){
+'use strict';
+const W = 10080;                       // minutes in a week, Monday 00:00 = 0
+const FADE = 12;
+const SMALL = window.innerWidth < 600;                       // minutes a light takes to come up or go down
+const DAYNAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const KIND = {
+  food:     {ink:'orange', label:'Restaurants and cafes',            one:'restaurant or cafe'},
+  bars:     {ink:'rose',   label:'Bars and clubs',                   one:'bar or club'},
+  delis:    {ink:'cyan',   label:'Delis, groceries and pharmacies',  one:'deli, grocery or pharmacy'},
+  shops:    {ink:'sun',    label:'Shops',                            one:'shop'},
+  services: {ink:'lilac',  label:'Offices, banks, gyms and services', one:'office or service'}
+};
+const css = getComputedStyle(document.documentElement);
+const tok = n => css.getPropertyValue('--'+n).trim();
+const hex = h => { h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; };
+const fmt = n => n.toLocaleString('en-US');
+
+// ---------- time words, AP style
+function clockWords(m){
+  m = ((m % 1440) + 1440) % 1440;
+  if (m === 0) return 'Midnight';
+  if (m === 720) return 'Noon';
+  let h = Math.floor(m/60), mm = m % 60, ap = h < 12 ? 'a.m.' : 'p.m.';
+  h = h % 12 || 12;
+  return h + (mm ? ':' + String(mm).padStart(2,'0') : '') + ' ' + ap;
+}
+const dayOf = t => DAYNAMES[Math.floor(((t % W) + W) % W / 1440)];
+function nyNow(){
+  const p = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',hourCycle:'h23'}).formatToParts(new Date());
+  const g = k => p.find(x=>x.type===k).value;
+  const d = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(g('weekday'));
+  return d*1440 + (+g('hour'))*60 + (+g('minute'));
+}
+
+// ---------- state
+let D, N, S, lon, lat, kind, sched, names, bright, hidden = new Set();
+let t = 0, playing = false, lastFrame = 0, deckOverlay, map, counts;
+
+fetch('data.json').then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }).then(init).catch(e => {
+  document.getElementById('loading').textContent = 'The data did not load (' + e.message + ').';
+});
+
+function init(data){
+  D = data; S = data.s; N = data.p.length;
+  lon = new Float64Array(N); lat = new Float64Array(N); kind = new Uint8Array(N); sched = new Uint32Array(N); names = new Array(N);
+  data.p.forEach((p,i) => { lon[i]=p[0]; lat[i]=p[1]; kind[i]=p[2]; sched[i]=p[3]; names[i]=p[4]; });
+  bright = new Float32Array(S.length);
+
+  // open counts for every minute of the week, per kind (difference arrays)
+  counts = data.kinds.map(() => new Int32Array(W + 1));
+  for (let i=0;i<N;i++){
+    const iv = S[sched[i]], c = counts[kind[i]];
+    for (let j=0;j<iv.length;j+=2){ c[iv[j]]++; c[iv[j+1]]--; }
+  }
+  counts.forEach(c => { for (let m=1;m<=W;m++) c[m]+=c[m-1]; });
+
+  const ld = document.getElementById('loading'); if (ld) ld.remove();
+  writeCopy();
+  buildKey();
+  buildMap();
+  drawWeekBase();
+  const h = parseHash();
+  setTime(h != null ? h : nyNow(), false);
+}
+
+const openAt = (m, k) => counts[k][((m % W) + W) % W];
+const totalAt = m => D.kinds.reduce((s,_,k) => s + openAt(m,k), 0);
+
+function writeCopy(){
+  const g = new Date(D.generated + 'T12:00:00');
+  const mon = ['Jan.','Feb.','March','April','May','June','July','Aug.','Sept.','Oct.','Nov.','Dec.'][g.getMonth()];
+  document.getElementById('asof').textContent = 'Pulled ' + mon + ' ' + g.getDate() + ', ' + g.getFullYear();
+  const lo = totalAt(2*1440 + 4*60), hi = totalAt(2*1440 + 13*60);
+  document.getElementById('finding').textContent =
+    'At 4 a.m. on a Wednesday, ' + fmt(lo) + ' of the ' + fmt(N) + ' New York City businesses on this map are open. By 1 p.m., ' + fmt(hi) + ' are.';
+  const byK = D.kinds.map((_,k) => 0); for (let i=0;i<N;i++) byK[kind[i]]++;
+  const K = D.kinds;
+  const part = (k, word) => '<strong>' + fmt(byK[K.indexOf(k)]) + '</strong> ' + word;
+  document.getElementById('lede').innerHTML =
+    'Each point of light is a business whose hours someone has posted on OpenStreetMap, the volunteer-built map of the world: ' +
+    part('food','restaurants and cafes') + ', ' + part('shops','shops') + ', ' + part('services','offices, banks, clinics and other services') + ', ' +
+    part('delis','delis, groceries and pharmacies') + ' and ' + part('bars','bars and clubs') + '. ' +
+    'It’s a sample, and an uneven one: volunteers have posted hours for roughly two in five Brooklyn restaurants but fewer than one in 10 in the Bronx, so the Bronx looks darker than it is. Drag along the week under the map, or play it.';
+  let n247 = 0; for (let i=0;i<N;i++){ const iv=S[sched[i]]; if (iv.length===2 && iv[0]===0 && iv[1]===W) n247++; }
+  document.getElementById('what').innerHTML =
+    'Every business inside the five boroughs whose OpenStreetMap listing includes opening hours: shops, restaurants, bars, delis, banks, offices, clinics, gyms, galleries and the like. ' +
+    'Parks, libraries, post offices, bike docks, ATMs and other things that aren’t businesses are left out. ' +
+    '<strong>' + fmt(n247) + '</strong> places say they never close; they stay lit all week.';
+  document.getElementById('how').innerHTML =
+    'OpenStreetMap writes hours in a compact code of its own, like “Mo-Fr 09:00-17:00; Sa 10:00-14:00; Su off.” ' +
+    'Of ' + fmt(D.tried) + ' business listings with hours, <strong>' + fmt(D.unreadable) + '</strong> couldn’t be read reliably, most of them notes like “by appointment,” and are left off rather than guessed at.';
+}
+
+// ---------- brightness of every schedule at minute t
+function computeBright(m){
+  m = ((m % W) + W) % W;
+  for (let j=0;j<S.length;j++){
+    const iv = S[j], L = iv.length;
+    let b = 0;
+    for (let k=0;k<L;k+=2){
+      let s = iv[k], e = iv[k+1];
+      if (m < s || m >= e) continue;
+      if (s === 0 && iv[L-1] === W) s = iv[L-2] - W;     // open across Sunday midnight
+      if (e === W && iv[0] === 0) e = W + iv[1];
+      if (s <= -W || e >= 2*W) { b = 1; break; }          // never closes
+      b = Math.min(1, (m - s + 1) / FADE, (e - m) / FADE);
+      break;
+    }
+    bright[j] = b;
+  }
+}
+
+// ---------- map
+function buildMap(){
+  const night = tok('night');
+  map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: { carto: { type:'vector', url:'https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json' } },
+      layers: [
+        { id:'bg', type:'background', paint:{'background-color':'#161917'} },
+        { id:'water', type:'fill', source:'carto', 'source-layer':'water', paint:{'fill-color':night} },
+        { id:'park', type:'fill', source:'carto', 'source-layer':'park', paint:{'fill-color':'#131714'} },
+        { id:'bldg', type:'fill', source:'carto', 'source-layer':'building', minzoom:14, paint:{'fill-color':'#1c201d','fill-opacity':['interpolate',['linear'],['zoom'],14,0,15.5,1]} },
+        { id:'roads', type:'line', source:'carto', 'source-layer':'transportation',
+          filter:['!in','class','rail','transit','ferry','path'],
+          paint:{'line-color':'#242926','line-width':['interpolate',['exponential',1.6],['zoom'],10,['match',['get','class'],['motorway','trunk','primary'],0.9,0.25],16,['match',['get','class'],['motorway','trunk','primary'],7,['secondary','tertiary'],5,3]]} }
+      ]
+    },
+    center: [-73.94, 40.715], zoom: SMALL ? 9.6 : 10.6, minZoom: 9, maxZoom: 18,
+    maxBounds: [[-74.6, 40.35], [-73.3, 41.05]],
+    attributionControl: { compact: true },
+    dragRotate: false, pitchWithRotate: false
+  });
+  map.touchZoomRotate.disableRotation();
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-right');
+
+  const ink = D.kinds.map(k => hex(tok(KIND[k].ink)));
+  const GLOW = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d'), img = g.createImageData(128, 128);
+    for (let y=0;y<128;y++) for (let x=0;x<128;x++){
+      const r = Math.hypot(x-63.5, y-63.5) / 64;
+      const a = r >= 1 ? 0 : Math.pow(1 - r, 2.2) * (0.35 + 0.65*Math.exp(-r*r*14));
+      const o = (y*128 + x)*4; img.data[o]=img.data[o+1]=img.data[o+2]=255; img.data[o+3]=Math.round(255*a);
+    }
+    g.putImageData(img, 0, 0); return c.toDataURL();
+  })();
+  const additive = {
+    blend: true, depthWriteEnabled: false, depthCompare: 'always',
+    blendColorOperation: 'add', blendColorSrcFactor: 'src-alpha', blendColorDstFactor: 'one',
+    blendAlphaOperation: 'add', blendAlphaSrcFactor: 'one', blendAlphaDstFactor: 'one-minus-src-alpha'
+  };
+  const data = { length: N };
+  const pos = (_, {index}) => [lon[index], lat[index]];
+  let zoomA = 1;
+
+  function layers(){
+    return [
+      new deck.IconLayer({
+        id:'halo', data, getPosition: pos, iconAtlas: GLOW, iconMapping: { g: { x:0, y:0, width:128, height:128, mask:true } },
+        getIcon: () => 'g', sizeUnits:'meters', getSize: 230, sizeMinPixels: SMALL ? 11 : 18, sizeMaxPixels: 150, billboard:true,
+        getColor: (_, {index, target}) => {
+          const c = ink[kind[index]], b = hidden.has(kind[index]) ? 0 : bright[sched[index]];
+          target[0]=c[0]; target[1]=c[1]; target[2]=c[2]; target[3]=Math.round(255*Math.min(1,0.62*zoomA)*b); return target;
+        },
+        updateTriggers: { getColor: [t, zoomA, hidden.size, [...hidden].join()] },
+        parameters: additive
+      }),
+      new deck.ScatterplotLayer({
+        id:'core', data, getPosition: pos, radiusUnits:'meters', getRadius: 7,
+        radiusMinPixels: 1.15, radiusMaxPixels: 5, stroked:false, pickable:true,
+        getFillColor: (_, {index, target}) => {
+          const k = kind[index], c = ink[k];
+          if (hidden.has(k)) { target[3]=0; return target; }
+          const b = bright[sched[index]];
+          // open: the colour pushed toward white-hot; closed: a dim ember
+          const w = 0.3*b;
+          target[0]=c[0]+(255-c[0])*w; target[1]=c[1]+(255-c[1])*w; target[2]=c[2]+(255-c[2])*w;
+          target[3]=Math.round(255*(0.13 + 0.87*b)); return target;
+        },
+        updateTriggers: { getFillColor: [t, hidden.size, [...hidden].join()] },
+        parameters: additive
+      })
+    ];
+  }
+
+  deckOverlay = new deck.MapboxOverlay({
+    interleaved: false, pickingRadius: 6, layers: [],
+    getTooltip: ({index, layer}) => layer && index >= 0 ? { html: tipFor(index), className:'deck-tooltip', style:{background:'none',padding:0,border:0} } : null
+  });
+  map.addControl(deckOverlay);
+  const zoomFactor = () => { const z = map.getZoom(); return z < 11 ? 0.28 + 0.27*(z-9)/2 : z < 14 ? 0.55 + 0.55*(z-11)/3 : 1.1; };
+  map.on('zoom', () => { const a = Math.round(zoomFactor()*20)/20; if (a !== zoomA){ zoomA = a; redraw(); } });
+  zoomA = Math.round(zoomFactor()*20)/20;
+  redraw = () => deckOverlay.setProps({ layers: layers() });
+}
+let redraw = () => {};
+
+// ---------- hover card
+function nextChange(j, m){
+  const iv = S[j];
+  if (iv.length===2 && iv[0]===0 && iv[1]===W) return {open:true, always:true};
+  m = ((m % W) + W) % W;
+  for (let k=0;k<iv.length;k+=2) if (m >= iv[k] && m < iv[k+1]) {
+    let e = iv[k+1]; if (e === W && iv[0] === 0) e = W + iv[1];
+    return {open:true, at:e};
+  }
+  for (let k=0;k<iv.length;k+=2) if (iv[k] > m) return {open:false, at:iv[k]};
+  return {open:false, at:iv[0] + W};
+}
+function whenWords(at, m, soon){
+  if (soon && at - m < 720) return clockWords(at).replace(/^Midnight$/,'midnight').replace(/^Noon$/,'noon');
+  const sameDay = Math.floor(((at%W)+W)%W/1440) === Math.floor(m/1440) && at - m < 1440;
+  const tomorrow = Math.floor(at/1440) - Math.floor(m/1440) === 1;
+  return clockWords(at).replace(/^Midnight$/,'midnight').replace(/^Noon$/,'noon') + (sameDay ? '' : tomorrow ? ' tomorrow' : ' ' + dayOf(at));
+}
+function tipFor(i){
+  const k = D.kinds[kind[i]], m = ((t%W)+W)%W, nc = nextChange(sched[i], m);
+  const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const nm = names[i] ? esc(names[i]) : 'Unnamed ' + KIND[k].one;
+  const status = nc.always ? 'Open 24 hours, every day' : nc.open ? 'Open until ' + whenWords(nc.at, m, true) : 'Closed; opens at ' + whenWords(nc.at, m);
+  return '<div class="tip"><div class="nm">' + nm + '</div><div class="k">' + KIND[k].label + '</div><div>' + status + '</div></div>';
+}
+
+// ---------- key
+function buildKey(){
+  const ul = document.getElementById('key');
+  D.kinds.forEach((k, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<button aria-pressed="true"><span class="sw" style="background:var(--' + KIND[k].ink + ')"></span><span>' + KIND[k].label + '</span><span class="n" data-k="' + i + '"></span></button>';
+    li.firstChild.addEventListener('click', e => {
+      const b = e.currentTarget, on = b.getAttribute('aria-pressed') === 'true';
+      b.setAttribute('aria-pressed', on ? 'false' : 'true');
+      on ? hidden.add(i) : hidden.delete(i);
+      drawWeek(); redraw(); updateCount();
+    });
+    ul.appendChild(li);
+  });
+}
+
+// ---------- the week strip
+const cv = document.getElementById('week'), cx = cv.getContext('2d');
+let base = null;
+function drawWeekBase(){
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  const off = document.createElement('canvas'); off.width = cv.width; off.height = cv.height;
+  const o = off.getContext('2d'); o.scale(dpr, dpr);
+  let max = 0; for (let m=0;m<W;m+=10){ const v = totalAt(m); if (v>max) max=v; }
+  const y = v => h - 2 - (h - 10) * v / max;
+  // stacked areas, bottom up, in the order of the key
+  const order = [2,0,1,3,4];  // delis at the bottom: they carry the night
+  const step = Math.max(1, Math.round(W / (w*1.5)));
+  const lower = new Float64Array(Math.ceil(W/step)+1);
+  order.forEach(k => {
+    if (hidden.has(k)) return;
+    o.beginPath();
+    const upper = [];
+    for (let m=0, n=0; m<=W; m+=step, n++){ const v = lower[n] + openAt(Math.min(m, W-1), k); upper.push(v); }
+    for (let n=0;n<upper.length;n++){ const x = w * n*step / W; n ? o.lineTo(x, y(upper[n])) : o.moveTo(x, y(upper[n])); }
+    for (let n=upper.length-1;n>=0;n--){ o.lineTo(w * n*step / W, y(lower[n])); }
+    o.closePath();
+    o.fillStyle = tok(KIND[D.kinds[k]].ink); o.globalAlpha = 0.85; o.fill();
+    for (let n=0;n<upper.length;n++) lower[n] = upper[n];
+  });
+  o.globalAlpha = 1;
+  o.strokeStyle = tok('line'); o.lineWidth = 1;
+  for (let d=1; d<7; d++){ const x = Math.round(w*d/7)+.5; o.beginPath(); o.moveTo(x,0); o.lineTo(x,h); o.stroke(); }
+  base = off;
+}
+function drawWeek(){ drawWeekBase(); paintWeek(); }
+function paintWeek(){
+  if (!base) return;
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  cx.setTransform(1,0,0,1,0,0); cx.clearRect(0,0,cv.width,cv.height); cx.drawImage(base,0,0);
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  const x = w * (((t%W)+W)%W) / W;
+  cx.fillStyle = tok('fg'); cx.fillRect(Math.round(x)-1, 0, 2, h);
+}
+function minuteFromEvent(e){
+  const r = cv.getBoundingClientRect();
+  const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  return Math.min(W-1, Math.round(f*W/5)*5);
+}
+let dragging = false;
+cv.addEventListener('pointerdown', e => { dragging = true; cv.setPointerCapture(e.pointerId); stop(); setTime(minuteFromEvent(e)); });
+cv.addEventListener('pointermove', e => { if (dragging) setTime(minuteFromEvent(e)); });
+cv.addEventListener('pointerup', () => { dragging = false; });
+cv.addEventListener('keydown', e => {
+  const step = e.shiftKey ? 60 : 10;
+  if (e.key === 'ArrowRight') { stop(); setTime(t + step); e.preventDefault(); }
+  if (e.key === 'ArrowLeft')  { stop(); setTime(t - step); e.preventDefault(); }
+});
+window.addEventListener('resize', () => { if (D) drawWeek(); });
+
+// ---------- clock, count, hash
+function updateCount(){
+  const m = ((t%W)+W)%W;
+  let tot = 0;
+  D.kinds.forEach((_,k) => { const v = openAt(m,k); if (!hidden.has(k)) tot += v; const el = document.querySelector('.key .n[data-k="'+k+'"]'); if (el) el.textContent = fmt(v) + ' open'; });
+  document.getElementById('clockCount').textContent = fmt(tot) + (tot === 1 ? ' place' : ' places') + ' open';
+}
+let hashTimer;
+function setTime(m, writeHash = true){
+  t = ((Math.round(m) % W) + W) % W;
+  computeBright(t);
+  document.getElementById('clockTime').textContent = clockWords(t);
+  document.getElementById('clockDay').textContent = dayOf(t);
+  cv.setAttribute('aria-valuenow', t);
+  cv.setAttribute('aria-valuetext', dayOf(t) + ', ' + clockWords(t));
+  updateCount(); paintWeek(); redraw();
+  if (writeHash){ clearTimeout(hashTimer); hashTimer = setTimeout(() => history.replaceState(null, '', '#' + dayOf(t).slice(0,3).toLowerCase() + '-' + String(Math.floor(t%1440/60)).padStart(2,'0') + String(t%60).padStart(2,'0')), 250); }
+}
+function parseHash(){
+  const m = location.hash.match(/^#(mon|tue|wed|thu|fri|sat|sun)-(\d{2})(\d{2})$/i);
+  if (!m) return null;
+  return ['mon','tue','wed','thu','fri','sat','sun'].indexOf(m[1].toLowerCase())*1440 + Math.min(23,+m[2])*60 + Math.min(59,+m[3]);
+}
+
+// ---------- play: one city hour every 1.4 seconds
+const playBtn = document.getElementById('play');
+function stop(){ playing = false; playBtn.setAttribute('aria-pressed','false'); playBtn.textContent = 'Play the week'; }
+function tick(ts){
+  if (!playing) return;
+  const dt = lastFrame ? Math.min(100, ts - lastFrame) : 16; lastFrame = ts;
+  setTime(t + dt * 60 / 1400, false);
+  requestAnimationFrame(tick);
+}
+playBtn.addEventListener('click', () => {
+  if (playing) { stop(); setTime(t); return; }
+  playing = true; lastFrame = 0; playBtn.setAttribute('aria-pressed','true'); playBtn.textContent = 'Pause';
+  requestAnimationFrame(tick);
+});
+document.getElementById('now').addEventListener('click', () => { stop(); setTime(nyNow()); });
+})();
+</script>
+</body>
+</html>
