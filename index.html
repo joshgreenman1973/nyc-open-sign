@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Open Sign</title>
-<meta name="description" content="Every New York City business that posts its hours on OpenStreetMap, lit when it's open, for any hour of the week.">
+<meta name="description" content="New York City shops, restaurants, bars and other places whose OpenStreetMap listings include hours, lit when they're listed as open, for any hour of the week.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -123,11 +123,11 @@ footer{font-size:var(--t-micro);color:var(--fg2);padding:18px 0 40px;border-top:
 <header class="wrap">
   <div class="topline"><span>Hours as posted on OpenStreetMap</span><span id="asof">&nbsp;</span></div>
   <h1>Open Sign</h1>
-  <p class="finding" id="finding">At 4 a.m. on a Wednesday, 1,290 of the 21,067 New York City businesses on this map are open. By 1 p.m., 19,163 are.</p>
-  <p class="lede" id="lede">Each point of light is a business whose hours someone has posted on OpenStreetMap, the volunteer-built map of the world: <strong>8,700</strong> restaurants and cafes, <strong>5,962</strong> shops, <strong>2,813</strong> offices, banks, clinics and other services, <strong>2,604</strong> delis, groceries and pharmacies and <strong>988</strong> bars and clubs. It’s a sample, and an uneven one: volunteers have posted hours for roughly two in five Brooklyn restaurants but fewer than one in 10 in the Bronx, so the Bronx looks darker than it is. Pick a day and time at the top of the map, or play the week.</p>
+  <p class="finding" id="finding">At 4 a.m. on a Wednesday, 1,289 of the 20,971 New York City places on this map are listed as open. By 1 p.m., 19,081 are.</p>
+  <p class="lede" id="lede">Each point of light is a place whose hours someone has posted on OpenStreetMap, the volunteer-built map of the world: <strong>8,700</strong> restaurants, cafes and bakeries, <strong>5,942</strong> shops, <strong>2,759</strong> offices, banks, clinics and other services, <strong>2,579</strong> delis, groceries and pharmacies and <strong>991</strong> bars and clubs. It’s a sample, and an uneven one: in Brooklyn the map has about 42% as many food listings as the health department has inspected restaurants, and in the Bronx about 8%, so the Bronx looks darker than it is. Pick a day and time at the top of the map, or play the week.</p>
 </header>
 
-<section class="stage" aria-label="Map of open businesses">
+<section class="stage" aria-label="Map of places listed as open">
   <div id="map"></div>
   <div class="loading" id="loading">Turning the lights on</div>
   <div class="topdock">
@@ -171,15 +171,16 @@ footer{font-size:var(--t-micro);color:var(--fg2);padding:18px 0 40px;border-top:
   <div>
     <h2>What's on the map</h2>
     <p id="what">&nbsp;</p>
-    <p>The colors follow the light each kind of place gives off: fluorescent blue-white for delis, groceries and pharmacies, warm orange for restaurants and cafes, pink neon for bars and clubs, yellow for shops and violet for offices, banks, clinics, gyms and galleries. A place glows while it's open and fades to a faint ember when it closes. Where many places sit close together, their light adds up.</p>
+    <p>The colors follow the light each kind of place gives off: fluorescent blue-white for delis, groceries and pharmacies, warm orange for restaurants, cafes and bakeries, pink neon for bars and clubs, yellow for shops and violet for offices, banks, clinics, gyms and galleries. A place glows while it's open and fades to a faint ember when it closes. Where many places sit close together, their light adds up.</p>
   </div>
   <div>
     <h2>How the hours are read</h2>
     <p id="how">&nbsp;</p>
-    <p>The clock is always New York time, wherever you're reading from. Holiday closings are ignored, so this shows an ordinary week. Rules that apply only in some months, like summer hours, are applied for the month the data was pulled. Where a listing says a place is open late with no closing time ("17:00+"), it's counted as open for three hours. Where a listing gives two schedules, such as a store and the pharmacy inside it, the first one is used.</p>
+    <p>The clock is always New York time, wherever you're reading from. Holiday closings are ignored, so this shows an ordinary week. Rules that apply only in some months, like summer hours, are applied for the month the data was pulled. Where a listing says a place is open late with no closing time ("17:00+"), it's counted as open for three hours. A rule after a semicolon replaces what came before it for those days; one after a comma adds to it. A fallback rule, after two bars ("||"), fills only the times the rules before it don't cover, which is how a store and the pharmacy inside it often end up in one listing. Hours that run past midnight are kept even when the next day has a line of its own, so “Fr 17:30-01:00; Sa 11:00-23:00” reads as open until 1 a.m. Saturday. OpenStreetMap’s specification, read strictly, would close that bar at midnight, though it calls that reading “probably not intended.” The rules are checked against worked examples in the <a href="https://github.com/joshgreenman1973/nyc-open-sign/blob/main/test_parser.py">project’s tests</a>.</p>
     <h2>How complete it is</h2>
-    <p>Not very, and not evenly. As a rough check, the restaurants and cafes here were counted by borough in November 2026 and set against the restaurants the health department <a href="https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j">inspected</a> in the two years before. The map had about <strong>42%</strong> as many in Brooklyn, <strong>37%</strong> in Manhattan, <strong>26%</strong> in Queens, <strong>25%</strong> on Staten Island and <strong>8%</strong> in the Bronx. A dark block can mean a closed block or an unmapped one. The rhythm of the day, when things open and when they close, is the part to trust.</p>
-    <p>The data is pulled fresh from OpenStreetMap every Monday. To fix a wrong listing, edit it at <a href="https://www.openstreetmap.org">openstreetmap.org</a>; the change shows up here the next week.</p>
+    <p>Not very, and not evenly. As a rough check, the map’s food listings were counted by borough and set against the restaurants and other food service establishments the health department <a href="https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j">inspected</a> in the two years before the data was pulled. The map had about <strong>42%</strong> as many in Brooklyn (2,838 against 6,790), <strong>37%</strong> in Manhattan (3,890 against 10,448), <strong>26%</strong> in Queens (1,536 against 5,999), <strong>25%</strong> on Staten Island (243 against 958) and <strong>8%</strong> in the Bronx (191 against 2,308). That’s a ratio of two counts, not a match rate: no listing was paired with an inspection record, and the map’s food group includes bakeries, coffee shops and candy stores the health department doesn’t always inspect. The <a href="https://github.com/joshgreenman1973/nyc-open-sign/blob/main/coverage.py">calculation</a> and its <a href="https://github.com/joshgreenman1973/nyc-open-sign/blob/main/coverage.json">counts</a> are published. A dark block can mean a closed block or an unmapped one.</p>
+    <p>What the map shows is the weekly pattern in these posted schedules. It isn’t a representative measure of what’s open across the city: coverage is uneven, listings go out of date and the choice of what counts as a place shapes the totals.</p>
+    <p>A refresh from OpenStreetMap is scheduled every Monday. To fix a wrong listing, edit it at <a href="https://www.openstreetmap.org">openstreetmap.org</a>; the change should appear here after the next successful refresh.</p>
   </div>
 </section>
 
@@ -195,7 +196,7 @@ const FADE = 12;
 const SMALL = window.innerWidth < 600;                       // minutes a light takes to come up or go down
 const DAYNAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const KIND = {
-  food:     {ink:'orange', label:'Restaurants and cafes',            one:'restaurant or cafe'},
+  food:     {ink:'orange', label:'Restaurants, cafes and bakeries', one:'restaurant, cafe or bakery'},
   bars:     {ink:'rose',   label:'Bars and clubs',                   one:'bar or club'},
   delis:    {ink:'cyan',   label:'Delis, groceries and pharmacies',  one:'deli, grocery or pharmacy'},
   shops:    {ink:'sun',    label:'Shops',                            one:'shop'},
@@ -228,7 +229,9 @@ let D, N, S, lon, lat, kind, sched, names, bright, hidden = new Set();
 let t = 0, ph = 0, playing = false, lastFrame = 0, deckOverlay, map, counts;
 
 fetch('data.json').then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }).then(init).catch(e => {
-  document.getElementById('loading').textContent = 'The data did not load (' + e.message + ').';
+  console.error(e);
+  const l = document.getElementById('loading');
+  if (l) l.textContent = 'The data did not load (' + e.message + ').';
 });
 
 function init(data){
@@ -263,23 +266,24 @@ function writeCopy(){
   document.getElementById('asof').textContent = 'Pulled ' + mon + ' ' + g.getDate() + ', ' + g.getFullYear();
   const lo = totalAt(2*1440 + 4*60), hi = totalAt(2*1440 + 13*60);
   document.getElementById('finding').textContent =
-    'At 4 a.m. on a Wednesday, ' + fmt(lo) + ' of the ' + fmt(N) + ' New York City businesses on this map are open. By 1 p.m., ' + fmt(hi) + ' are.';
+    'At 4 a.m. on a Wednesday, ' + fmt(lo) + ' of the ' + fmt(N) + ' New York City places on this map are listed as open. By 1 p.m., ' + fmt(hi) + ' are.';
   const byK = D.kinds.map((_,k) => 0); for (let i=0;i<N;i++) byK[kind[i]]++;
   const K = D.kinds;
   const part = (k, word) => '<strong>' + fmt(byK[K.indexOf(k)]) + '</strong> ' + word;
   document.getElementById('lede').innerHTML =
-    'Each point of light is a business whose hours someone has posted on OpenStreetMap, the volunteer-built map of the world: ' +
-    part('food','restaurants and cafes') + ', ' + part('shops','shops') + ', ' + part('services','offices, banks, clinics and other services') + ', ' +
+    'Each point of light is a place whose hours someone has posted on OpenStreetMap, the volunteer-built map of the world: ' +
+    part('food','restaurants, cafes and bakeries') + ', ' + part('shops','shops') + ', ' + part('services','offices, banks, clinics and other services') + ', ' +
     part('delis','delis, groceries and pharmacies') + ' and ' + part('bars','bars and clubs') + '. ' +
-    'It’s a sample, and an uneven one: volunteers have posted hours for roughly two in five Brooklyn restaurants but fewer than one in 10 in the Bronx, so the Bronx looks darker than it is. Pick a day and time at the top of the map, or play the week.';
+    'It’s a sample, and an uneven one: in Brooklyn the map has about 42% as many food listings as the health department has inspected restaurants, and in the Bronx about 8%, so the Bronx looks darker than it is. Pick a day and time at the top of the map, or play the week.';
   let n247 = 0; for (let i=0;i<N;i++){ const iv=S[sched[i]]; if (iv.length===2 && iv[0]===0 && iv[1]===W) n247++; }
   document.getElementById('what').innerHTML =
-    'Every business inside the five boroughs whose OpenStreetMap listing includes opening hours: shops, restaurants, bars, delis, banks, offices, clinics, gyms, galleries and the like. ' +
-    'Parks, libraries, post offices, bike docks, ATMs and other things that aren’t businesses are left out. ' +
+    'Places inside the five boroughs whose OpenStreetMap listings include opening hours and fall into one of five groups: shops; restaurants, cafes and bakeries; bars and clubs; delis, groceries and pharmacies; and offices, banks, clinics, gyms, galleries, museums, hotels and the like. ' +
+    'Most are businesses, though not all: some are nonprofits, like museums. Parks, libraries, post offices, government offices, bike docks, ATMs and other public places are left out. ' +
+    'Where the same name and kind of place is listed twice within about 25 meters, it’s counted once' + (D.duplicates ? ' (' + fmt(D.duplicates) + ' this time)' : '') + '. ' +
     '<strong>' + fmt(n247) + '</strong> places say they never close; they stay lit all week.';
   document.getElementById('how').innerHTML =
     'OpenStreetMap writes hours in a compact code of its own, like “Mo-Fr 09:00-17:00; Sa 10:00-14:00; Su off.” ' +
-    'Of ' + fmt(D.tried) + ' business listings with hours, <strong>' + fmt(D.unreadable) + '</strong> couldn’t be read reliably, most of them notes like “by appointment,” and are left off rather than guessed at.';
+    'Of ' + fmt(D.tried) + ' listings with hours, <strong>' + fmt(D.unreadable) + '</strong> couldn’t be read reliably, most of them notes like “by appointment,” and are left off rather than guessed at.';
 }
 
 // ---------- brightness of every schedule at minute t
@@ -500,7 +504,7 @@ function updateCount(){
   const m = ((t%W)+W)%W;
   let tot = 0;
   D.kinds.forEach((_,k) => { const v = openAt(m,k); if (!hidden.has(k)) tot += v; const el = document.querySelector('.key .n[data-k="'+k+'"]'); if (el) el.textContent = fmt(v) + ' open'; });
-  document.getElementById('clockCount').textContent = fmt(tot) + (tot === 1 ? ' place' : ' places') + ' open';
+  document.getElementById('clockCount').textContent = fmt(tot) + (tot === 1 ? ' place' : ' places') + ' listed as open';
 }
 // ---------- day buttons and time-of-day slider
 const tod = document.getElementById('tod');

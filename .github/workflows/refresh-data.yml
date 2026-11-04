@@ -25,7 +25,7 @@ jobs:
           python-version: '3.11'
 
       - name: Rebuild from Overpass
-        run: python3 build.py
+        run: python3 test_parser.py && python3 build.py
 
       - name: Commit and push if changed
         run: |

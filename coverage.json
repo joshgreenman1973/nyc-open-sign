@@ -1,0 +1,39 @@
+{
+  "computed": "2026-11-04",
+  "map_data_pulled": "2026-11-04",
+  "dohmh_inspections_since": "2024-11-04",
+  "map_food_listings_outside_borough_outlines": 2,
+  "note": "Ratio of two counts, not a match rate; see coverage.py.",
+  "rows": [
+    {
+      "borough": "Brooklyn",
+      "map_food_listings": 2838,
+      "dohmh_establishments_inspected": 6790,
+      "ratio": 0.418
+    },
+    {
+      "borough": "Manhattan",
+      "map_food_listings": 3890,
+      "dohmh_establishments_inspected": 10448,
+      "ratio": 0.372
+    },
+    {
+      "borough": "Queens",
+      "map_food_listings": 1536,
+      "dohmh_establishments_inspected": 5999,
+      "ratio": 0.256
+    },
+    {
+      "borough": "Staten Island",
+      "map_food_listings": 243,
+      "dohmh_establishments_inspected": 958,
+      "ratio": 0.254
+    },
+    {
+      "borough": "Bronx",
+      "map_food_listings": 191,
+      "dohmh_establishments_inspected": 2308,
+      "ratio": 0.083
+    }
+  ]
+}
