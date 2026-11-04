@@ -42,13 +42,16 @@ h1{font-family:var(--display);font-variation-settings:'wdth' 88;font-weight:700;
 /* the map is the page */
 .stage{position:relative;height:min(80vh,860px);min-height:460px;background:var(--night);border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
 #map{position:absolute;inset:0}
-.clock{position:absolute;left:24px;bottom:22px;pointer-events:none;text-shadow:0 0 18px var(--night)}
+.overlay{position:absolute;left:0;bottom:0;z-index:4;pointer-events:none}
+.topdock{position:absolute;left:0;right:0;top:0;z-index:4}
+.clock{padding:0 24px 22px;text-shadow:0 0 18px var(--night)}
+.dock{background:rgba(8,9,10,.86);border-bottom:1px solid var(--line2);padding:12px 24px 8px}
 .clock .t{font-family:var(--display);font-variation-settings:'wdth' 75;font-weight:600;font-size:clamp(2.4rem,6vw,4.6rem);line-height:.95;font-variant-numeric:tabular-nums}
 .clock .d{font-size:1.15rem;margin-top:6px}
 .clock .c{font-size:var(--t-small);color:var(--fg2);margin-top:2px}
-@media (max-width:600px){.clock{left:16px;bottom:34px}.stage{height:70vh}.days .l{display:none}}
+@media (max-width:600px){.clock{padding:0 16px 10px}.dock{padding:10px 16px 6px}.stage{height:74vh}.days .l{display:none}}
 .days .s{display:none}@media (max-width:600px){.days .s{display:inline}}
-.maplibregl-ctrl-top-right,.maplibregl-ctrl-bottom-right{z-index:3}
+.maplibregl-ctrl-bottom-right{z-index:3}
 .maplibregl-ctrl-attrib{background:rgba(8,9,10,.7)!important;font-family:var(--sans)}
 .maplibregl-ctrl-attrib a{color:var(--fg2)!important}
 .maplibregl-ctrl-group{background:var(--bg2)!important;border-radius:0!important;box-shadow:none!important;border:1px solid var(--line)}
@@ -63,7 +66,7 @@ button.b:hover{border-color:var(--fg2)}
 button.b[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .bar .hint{font-size:var(--t-small);color:var(--fg2);margin-left:auto}
 .weekwrap{position:relative}
-.picker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px 30px;align-items:center;margin-bottom:20px}
+.picker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 30px;align-items:center}
 @media (max-width:820px){.picker{grid-template-columns:minmax(0,1fr)}}
 .daypick{display:flex}
 .daypick button.b{padding:8px 0;width:52px;text-align:center;margin-left:-1px}
@@ -111,32 +114,38 @@ footer{font-size:var(--t-micro);color:var(--fg2);padding:18px 0 40px;border-top:
 <header class="wrap">
   <div class="topline"><span>Hours as posted on OpenStreetMap</span><span id="asof">&nbsp;</span></div>
   <h1>Open Sign</h1>
-  <p class="finding" id="finding">&nbsp;</p>
-  <p class="lede" id="lede">&nbsp;</p>
+  <p class="finding" id="finding">At 4 a.m. on a Wednesday, 1,290 of the 21,067 New York City businesses on this map are open. By 1 p.m., 19,163 are.</p>
+  <p class="lede" id="lede">Each point of light is a business whose hours someone has posted on OpenStreetMap, the volunteer-built map of the world: <strong>8,700</strong> restaurants and cafes, <strong>5,962</strong> shops, <strong>2,813</strong> offices, banks, clinics and other services, <strong>2,604</strong> delis, groceries and pharmacies and <strong>988</strong> bars and clubs. It’s a sample, and an uneven one: volunteers have posted hours for roughly two in five Brooklyn restaurants but fewer than one in 10 in the Bronx, so the Bronx looks darker than it is. Pick a day and time at the top of the map, or play the week.</p>
 </header>
 
 <section class="stage" aria-label="Map of open businesses">
   <div id="map"></div>
   <div class="loading" id="loading">Turning the lights on</div>
-  <div class="clock" aria-live="polite">
-    <div class="t" id="clockTime">&nbsp;</div>
-    <div class="d" id="clockDay">&nbsp;</div>
-    <div class="c" id="clockCount">&nbsp;</div>
+  <div class="topdock">
+    <div class="dock">
+      <div class="picker">
+        <div class="daypick" role="group" aria-label="Day of the week"><button class="b" data-d="0" aria-label="Monday" aria-pressed="false">Mon</button><button class="b" data-d="1" aria-label="Tuesday" aria-pressed="false">Tue</button><button class="b" data-d="2" aria-label="Wednesday" aria-pressed="false">Wed</button><button class="b" data-d="3" aria-label="Thursday" aria-pressed="false">Thu</button><button class="b" data-d="4" aria-label="Friday" aria-pressed="false">Fri</button><button class="b" data-d="5" aria-label="Saturday" aria-pressed="false">Sat</button><button class="b" data-d="6" aria-label="Sunday" aria-pressed="false">Sun</button></div>
+        <div class="todwrap">
+          <input type="range" id="tod" min="0" max="1435" step="5" value="0" aria-label="Time of day">
+          <div class="todticks" aria-hidden="true"><span>Midnight</span><span>6 a.m.</span><span>Noon</span><span>6 p.m.</span><span>Midnight</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="overlay">
+    <div class="clock" aria-live="polite">
+      <div class="t" id="clockTime">&nbsp;</div>
+      <div class="d" id="clockDay">&nbsp;</div>
+      <div class="c" id="clockCount">&nbsp;</div>
+    </div>
   </div>
 </section>
 
 <section class="wrap controls">
-  <div class="picker">
-    <div class="daypick" role="group" aria-label="Day of the week"><button class="b" data-d="0" aria-label="Monday" aria-pressed="false">Mon</button><button class="b" data-d="1" aria-label="Tuesday" aria-pressed="false">Tue</button><button class="b" data-d="2" aria-label="Wednesday" aria-pressed="false">Wed</button><button class="b" data-d="3" aria-label="Thursday" aria-pressed="false">Thu</button><button class="b" data-d="4" aria-label="Friday" aria-pressed="false">Fri</button><button class="b" data-d="5" aria-label="Saturday" aria-pressed="false">Sat</button><button class="b" data-d="6" aria-label="Sunday" aria-pressed="false">Sun</button></div>
-    <div class="todwrap">
-      <input type="range" id="tod" min="0" max="1435" step="5" value="0" aria-label="Time of day">
-      <div class="todticks" aria-hidden="true"><span>Midnight</span><span>6 a.m.</span><span>Noon</span><span>6 p.m.</span><span>Midnight</span></div>
-    </div>
-  </div>
   <div class="bar">
     <button class="b" id="play" aria-pressed="false">Play the week</button>
     <button class="b" id="now">Right now</button>
-    <span class="hint" id="hint">Or drag across the whole week below</span>
+    <span class="hint" id="hint">Or drag across the whole week</span>
   </div>
   <div class="weekwrap">
     <canvas id="week" tabindex="0" role="slider" aria-label="Time of week" aria-valuemin="0" aria-valuemax="10079"></canvas>
@@ -249,7 +258,7 @@ function writeCopy(){
     'Each point of light is a business whose hours someone has posted on OpenStreetMap, the volunteer-built map of the world: ' +
     part('food','restaurants and cafes') + ', ' + part('shops','shops') + ', ' + part('services','offices, banks, clinics and other services') + ', ' +
     part('delis','delis, groceries and pharmacies') + ' and ' + part('bars','bars and clubs') + '. ' +
-    'It’s a sample, and an uneven one: volunteers have posted hours for roughly two in five Brooklyn restaurants but fewer than one in 10 in the Bronx, so the Bronx looks darker than it is. Drag along the week under the map, or play it.';
+    'It’s a sample, and an uneven one: volunteers have posted hours for roughly two in five Brooklyn restaurants but fewer than one in 10 in the Bronx, so the Bronx looks darker than it is. Pick a day and time at the top of the map, or play the week.';
   let n247 = 0; for (let i=0;i<N;i++){ const iv=S[sched[i]]; if (iv.length===2 && iv[0]===0 && iv[1]===W) n247++; }
   document.getElementById('what').innerHTML =
     'Every business inside the five boroughs whose OpenStreetMap listing includes opening hours: shops, restaurants, bars, delis, banks, offices, clinics, gyms, galleries and the like. ' +
@@ -299,11 +308,12 @@ function buildMap(){
     },
     center: [-73.94, 40.715], zoom: SMALL ? 9.6 : 10.6, minZoom: 9, maxZoom: 18,
     maxBounds: [[-74.6, 40.35], [-73.3, 41.05]],
-    attributionControl: { compact: true },
+    attributionControl: false,
     dragRotate: false, pitchWithRotate: false
   });
   map.touchZoomRotate.disableRotation();
-  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-right');
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'bottom-right');
+  map.addControl(new maplibregl.AttributionControl({compact:true}), 'bottom-right');
 
   const ink = D.kinds.map(k => hex(tok(KIND[k].ink)));
   const GLOW = (() => {
