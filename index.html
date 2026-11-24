@@ -7,7 +7,7 @@
 <meta name="description" content="New York City shops, restaurants, bars and other places whose OpenStreetMap listings include hours, lit when they're listed as open, for any hour of the week.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gloock&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <style>
 /* House system v5, black. Tokens copied from experiments/house-style/house.css. */
@@ -18,8 +18,9 @@
   --rose:#ff6fae; --cyan:#3cc8d8; --orange:#ff9f2e; --lilac:#b79bff;
   --accent:var(--sun);
   --night:#08090a;
-  --sans:'Karla',system-ui,-apple-system,sans-serif;
-  --display:'Archivo',system-ui,sans-serif;
+  --sans:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --display:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --title:'Gloock',Georgia,serif;
   --t-micro:13px; --t-small:14px; --t-body:17px;
   --t-find:clamp(1.2rem,1.9vw,1.55rem);
   --t-h1:clamp(1.9rem,3.2vw,2.6rem);
@@ -34,7 +35,7 @@ a{color:var(--fg);text-decoration-color:var(--fg2);text-underline-offset:2px}
 
 header{padding:22px 0 26px}
 .topline{display:flex;justify-content:space-between;gap:16px;font-size:var(--t-micro);color:var(--fg2);padding-bottom:28px;border-bottom:1px solid var(--line2);margin-bottom:26px}
-h1{font-family:var(--display);font-variation-settings:'wdth' 88;font-weight:700;font-size:var(--t-h1);line-height:1.05;margin:0 0 14px;letter-spacing:-.01em}
+h1{font-family:var(--title);font-weight:400;font-size:var(--t-h1);line-height:1.05;margin:0 0 14px;letter-spacing:0}
 .finding{font-size:var(--t-find);line-height:1.35;margin:0 0 14px;max-width:44ch}
 .lede{color:var(--fg2);max-width:68ch;margin:0}
 .lede strong{color:var(--fg);font-weight:600}
@@ -46,7 +47,7 @@ h1{font-family:var(--display);font-variation-settings:'wdth' 88;font-weight:700;
 .topdock{position:absolute;left:0;right:0;top:0;z-index:4}
 .clock{padding:0 24px 22px;text-shadow:0 0 18px var(--night)}
 .dock{background:rgba(8,9,10,.86);border-bottom:1px solid var(--line2);padding:12px 24px 8px}
-.clock .t{font-family:var(--display);font-variation-settings:'wdth' 75;font-weight:600;font-size:clamp(2.4rem,6vw,4.6rem);line-height:.95;font-variant-numeric:tabular-nums}
+.clock .t{font-family:var(--display);font-weight:600;font-size:clamp(2.4rem,6vw,4.6rem);line-height:.95;font-variant-numeric:tabular-nums}
 .clock .d{font-size:1.15rem;margin-top:6px}
 .clock .c{font-size:var(--t-small);color:var(--fg2);margin-top:2px}
 @media (max-width:600px){.clock{padding:0 16px 10px}.dock{padding:10px 16px 6px}.stage{height:74vh}.days .l{display:none}}
@@ -105,7 +106,7 @@ button.b[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:va
 
 .notes{padding-top:40px;padding-bottom:70px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 56px}
 @media (max-width:800px){.notes{grid-template-columns:1fr}}
-.notes h2{font-family:var(--display);font-variation-settings:'wdth' 88;font-weight:650;font-size:1.25rem;margin:0 0 8px}
+.notes h2{font-family:var(--display);font-weight:650;font-size:1.25rem;margin:0 0 8px}
 .notes p{color:var(--fg2);margin:0 0 12px;font-size:16px}
 .notes p strong{color:var(--fg);font-weight:600}
 footer{font-size:var(--t-micro);color:var(--fg2);padding:18px 0 40px;border-top:1px solid var(--line2)}
